@@ -7,17 +7,47 @@
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 800;
 const int FPS_LIMIT = 30;
+const int FPA = 90;
+static int frame_counter = 0;
 
 using Point2D = sf::Vector2f;
 
-// TODO: (Part 1) Define a function that samples a cubic Bezier curve at t in [0, 1].
-Point2D getPoint(const std::vector<sf::Vector2f>& pts, float t) { return Point2D{}; }
+// (Part 1) Define a function that samples a cubic Bezier curve at t in [0, 1].
+Point2D getPoint(const std::vector<sf::Vector2f>& pts, float t) {
+    float k = (1 - t);
 
-// TODO: (Part 2) Define a function that returns the curve's slope at t in [0, 1].
-Point2D getSlope(const std::vector<sf::Vector2f>& pts, float t) { return Point2D{}; }
+    float b1 = k * k * k;
+    float b2 = k * k * 3 * t;
+    float b3 = k * 3 * t * t;
+    float b4 = t * t * t;
 
-// TODO: (Part 1) Store four control points for the curve.
-// TODO: (Part 2) Track animation time for the square moving along the curve.
+    Point2D bezier = pts[0] * b1 + pts[1] * b2 + pts[2] * b3 + pts[3] * b4;
+
+    return bezier;
+}
+
+// (Part 2) Define a function that returns the curve's slope at t in [0, 1].
+Point2D getSlope(const std::vector<sf::Vector2f>& pts, float t) {
+    float k = (1 - t);
+
+    float b1 = 3 * k * k;
+    float b2 = 6 * k * t;
+    float b3 = 3 * t * t;
+
+    Point2D bezier_slope = b1 * (pts[1] - pts[0]) + b2 * (pts[2] - pts[1])  + b3 * (pts[3] - pts[2]);
+
+    return bezier_slope;
+ }
+
+// (Part 1) Store four control points for the curve.
+Point2D p0(100, 400);
+Point2D p1(100, 200);
+Point2D p2(700, 300);
+Point2D p3(700, 400);
+
+std::vector<sf::Vector2f> points = {p0, p1, p2, p3};
+// (Part 2) Track animation time for the square moving along the curve.
+float animation_time;
 // TODO: (Part 3) Track the index of the control point being dragged.
 
 void handleInput(sf::Window& window, bool& shouldQuit) {
@@ -45,14 +75,44 @@ void handleInput(sf::Window& window, bool& shouldQuit) {
 void render(sf::RenderWindow& window) {
     window.clear(sf::Color::Black);
     // ====== ====== ======
-    // TODO: (Part 1) Sample GetPoint over t in [0, 1] and connect samples using the line-drawing
+    // (Part 1) Sample GetPoint over t in [0, 1] and connect samples using the line-drawing
     // code from your project. Draw all four control points as circles after drawing the curve.
     // ====== ====== ======
 
+    sf::VertexArray bezier_curve(sf::PrimitiveType::LineStrip, 101);
+
+    for (int i = 0; i <= 100; ++i) {
+        float t = static_cast<float>(i) / 100.f;
+        Point2D current_point = getPoint(points, t);
+        bezier_curve[i].position = current_point;
+        bezier_curve[i].color = sf::Color::White;
+    }
+
+    window.draw(bezier_curve);
+
+    for (const auto& p : points) {
+        sf::CircleShape circle(15.f);
+        circle.setOrigin({15.f, 15.f});
+        circle.setPosition(p);
+        circle.setFillColor(sf::Color::Green);
+        window.draw(circle);
+    }
+
+
     // ====== ====== ======
-    // TODO: (Part 2) Draw a small square moving repeatedly along the curve.
+    // (Part 2) Draw a small square moving repeatedly along the curve.
     // Use GetSlope to orient it to the curve at each time step.
     // ====== ====== ======
+    animation_time = (frame_counter % FPA) / static_cast<float>(FPA);
+    sf::RectangleShape square({15.f, 15.f});
+    square.setOrigin({7.5f, 7.5f});
+    Point2D square_angle = getSlope(points, animation_time);
+    Point2D square_position = getPoint(points, animation_time);
+    square.setPosition({square_position.x, square_position.y});
+    square.setFillColor(sf::Color::Magenta);
+    square.setRotation(square_angle.angle());
+    window.draw(square);
+    frame_counter++;
 
     // ====== ====== ======
     // TODO: (Part 3) Draw control handles from point 1 to 2 and point 3 to 4.
