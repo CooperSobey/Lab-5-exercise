@@ -116,6 +116,17 @@ void render(sf::RenderWindow& window) {
 
     // ====== ====== ======
     // TODO: (Part 3) Draw control handles from point 1 to 2 and point 3 to 4.
+    sf::VertexArray control_handle1(sf::PrimitiveType::LineStrip, 101);
+    sf::VertexArray control_handle2(sf::PrimitiveType::LineStrip, 101);
+
+
+    for (int i = 0; i <= 100; ++i) {
+        //Update Code
+        float t = static_cast<float>(i) / 100.f;
+        Point2D current_point = getPoint(points, t);
+        bezier_curve[i].position = current_point;
+        bezier_curve[i].color = sf::Color::White;
+    }
     // TODO: (Part 4) Draw all connected cubic Bezier segments and their handles.
     // ====== ====== ======
 
