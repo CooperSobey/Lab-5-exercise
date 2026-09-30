@@ -49,6 +49,7 @@ std::vector<sf::Vector2f> points = {p0, p1, p2, p3};
 // (Part 2) Track animation time for the square moving along the curve.
 float animation_time;
 // TODO: (Part 3) Track the index of the control point being dragged.
+int grabbed_point = 5;
 
 void handleInput(sf::Window& window, bool& shouldQuit) {
     while (const std::optional<sf::Event> event = window.pollEvent()) {
@@ -58,9 +59,46 @@ void handleInput(sf::Window& window, bool& shouldQuit) {
         } else if (const auto* mouse = event->getIf<sf::Event::MouseButtonPressed>()) {
             // TODO: (Part 3) On left-click, select the closest control point
             // using mouse->position and start dragging it.
+            switch (mouse->button) {
+                case sf::Mouse::Button::Right:
+                    break;
+                case sf::Mouse::Button::Left: {
+                    if (grabbed_point < 5) {
+                        break;
+                        //points[grabbed_point] = sf::Vector2f(mouse->position);
+                    }
+                    float closest_distance = std::numeric_limits<float>::max();
+                    for (int i = 0; i < points.size(); ++i) {
+                        Point2D temp = points[i] - sf::Vector2f(mouse->position);
+                        float distance = temp.x * temp.x + temp.y * temp.y;
+
+                        if (distance < closest_distance) {
+                            closest_distance = distance;
+                            grabbed_point = i;
+                        }
+                    }
+                }
+                    break;
+                case sf::Mouse::Button::Middle:
+                    break;
+                default:
+                    break;
+            }
         } else if (const auto* mouse = event->getIf<sf::Event::MouseButtonReleased>()) {
             // TODO: (Part 3) On left-button release, stop dragging.
+            switch (mouse->button) {
+                case sf::Mouse::Button::Left:
+                    grabbed_point = 5;
+                    break;
+                default:
+                    break;
+            }
         } else if (const auto* mouse = event->getIf<sf::Event::MouseMoved>()) {
+            if (grabbed_point == 5) {
+                continue;
+            }
+            points[grabbed_point] = sf::Vector2f(mouse->position);
+
             // TODO: (Part 3) Move the selected control point to mouse->position.
             // TODO: (Part 4) Maintain matching slopes at shared endpoints.
             // When moving point 3, move point 5 without changing its distance
@@ -114,8 +152,7 @@ void render(sf::RenderWindow& window) {
     window.draw(square);
     frame_counter++;
 
-    // ====== ====== ======
-    // TODO: (Part 3) Draw control handles from point 1 to 2 and point 3 to 4.
+    //(Part 3) Draw control handles from point 1 to 2 and point 3 to 4.
     sf::VertexArray control_handle1(sf::PrimitiveType::LineStrip, 101);
     sf::VertexArray control_handle2(sf::PrimitiveType::LineStrip, 101);
 
@@ -123,10 +160,16 @@ void render(sf::RenderWindow& window) {
     for (int i = 0; i <= 100; ++i) {
         //Update Code
         float t = static_cast<float>(i) / 100.f;
-        Point2D current_point = getPoint(points, t);
-        bezier_curve[i].position = current_point;
-        bezier_curve[i].color = sf::Color::White;
+        Point2D current_point1 = points[0] + (points[1] - points[0]) * t;
+        control_handle1[i].position = current_point1;
+        control_handle1[i].color = sf::Color::Red;
+
+        Point2D current_point2 = points[2] + (points[3] - points[2]) * t;
+        control_handle2[i].position = current_point2;
+        control_handle2[i].color = sf::Color::Red;
     }
+    window.draw(control_handle1);
+    window.draw(control_handle2);
     // TODO: (Part 4) Draw all connected cubic Bezier segments and their handles.
     // ====== ====== ======
 
