@@ -48,8 +48,8 @@ Point2D p3(700, 400);
 std::vector<sf::Vector2f> points = {p0, p1, p2, p3};
 // (Part 2) Track animation time for the square moving along the curve.
 float animation_time;
-// TODO: (Part 3) Track the index of the control point being dragged.
-int grabbed_point = 5;
+// (Part 3) Track the index of the control point being dragged.
+int grabbed_point = -1;
 
 void handleInput(sf::Window& window, bool& shouldQuit) {
     while (const std::optional<sf::Event> event = window.pollEvent()) {
@@ -57,13 +57,13 @@ void handleInput(sf::Window& window, bool& shouldQuit) {
             window.close();
             shouldQuit = true;
         } else if (const auto* mouse = event->getIf<sf::Event::MouseButtonPressed>()) {
-            // TODO: (Part 3) On left-click, select the closest control point
+            // (Part 3) On left-click, select the closest control point
             // using mouse->position and start dragging it.
             switch (mouse->button) {
                 case sf::Mouse::Button::Right:
                     break;
                 case sf::Mouse::Button::Left: {
-                    if (grabbed_point < 5) {
+                    if (grabbed_point > -1) {
                         break;
                         //points[grabbed_point] = sf::Vector2f(mouse->position);
                     }
@@ -85,27 +85,44 @@ void handleInput(sf::Window& window, bool& shouldQuit) {
                     break;
             }
         } else if (const auto* mouse = event->getIf<sf::Event::MouseButtonReleased>()) {
-            // TODO: (Part 3) On left-button release, stop dragging.
+            // (Part 3) On left-button release, stop dragging.
             switch (mouse->button) {
                 case sf::Mouse::Button::Left:
-                    grabbed_point = 5;
+                    grabbed_point = -1;
                     break;
                 default:
                     break;
             }
         } else if (const auto* mouse = event->getIf<sf::Event::MouseMoved>()) {
-            if (grabbed_point == 5) {
+            if (grabbed_point == -1) {
                 continue;
             }
             points[grabbed_point] = sf::Vector2f(mouse->position);
 
-            // TODO: (Part 3) Move the selected control point to mouse->position.
+            // (Part 3) Move the selected control point to mouse->position.
             // TODO: (Part 4) Maintain matching slopes at shared endpoints.
             // When moving point 3, move point 5 without changing its distance
             // from point 4 (point numbers here start at 1).
         } else if (const auto* key = event->getIf<sf::Event::KeyPressed>()) {
-            // TODO: (Part 4) '+' adds three control points; '-' removes three,
+            // (Part 4) '+' adds three control points; '-' removes three,
             // keeping at least four points.
+            switch (key->code) {
+                case sf::Keyboard::Key::Add:
+                    for (int i = 0; i < 3; ++i) {
+                        Point2D temp(points[points.size() - 1].x + 50, points[points.size() - 1].y + 50);
+                        points.push_back(temp);
+                    }
+                    break;
+                case sf::Keyboard::Key::Subtract:
+                    for (int i = 0; i < 3; ++i) {
+                        if (points.size() > 4) {
+                            points.pop_back();
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
@@ -117,6 +134,10 @@ void render(sf::RenderWindow& window) {
     // code from your project. Draw all four control points as circles after drawing the curve.
     // ====== ====== ======
 
+    if (points.size() < 4) {
+        window.display();
+        return;
+    }
     sf::VertexArray bezier_curve(sf::PrimitiveType::LineStrip, 101);
 
     for (int i = 0; i <= 100; ++i) {
